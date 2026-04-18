@@ -209,6 +209,34 @@
 </head>
 <body>
 
+<audio id="bgMusic" src="%20%20bgmusic.mp3" loop preload="auto" autoplay></audio>
+<button id="musicToggle" type="button" aria-label="Toggle background music"
+  style="position:fixed;bottom:16px;right:16px;z-index:9999;background:#171a24;color:#e7e9ee;border:1px solid #262a37;border-radius:999px;padding:10px 14px;font:600 13px -apple-system,BlinkMacSystemFont,Segoe UI,Inter,Helvetica,Arial,sans-serif;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.35)">
+  &#9834; Music: On
+</button>
+<script>
+(function(){
+  var a = document.getElementById('bgMusic');
+  var btn = document.getElementById('musicToggle');
+  a.volume = 0.35;
+  function label(){ btn.innerHTML = (a.paused ? '&#9834; Music: Off' : '&#9834; Music: On'); }
+  function tryPlay(){ var p = a.play(); if (p && p.catch) p.catch(function(){}); }
+  tryPlay();
+  // Autoplay fallback: start on first user interaction
+  function kick(){ tryPlay(); label(); document.removeEventListener('click', kick, true); document.removeEventListener('keydown', kick, true); }
+  document.addEventListener('click', kick, true);
+  document.addEventListener('keydown', kick, true);
+  btn.addEventListener('click', function(e){
+    e.stopPropagation();
+    if (a.paused) tryPlay(); else a.pause();
+    setTimeout(label, 50);
+  });
+  a.addEventListener('play', label);
+  a.addEventListener('pause', label);
+  label();
+})();
+</script>
+
 <header>
   <h1>Ronix Studios – Script Completion Tracker</h1>
   <p class="subtitle">Roblox games (10K+ CCU) that don't have a Ronix script yet. Upload a proof image to mark one as finished.</p>
@@ -230,7 +258,7 @@
     <span class="chip active" data-filter="all">All</span>
     <span class="chip" data-filter="pending">Pending</span>
     <span class="chip" data-filter="done">Finished</span>
-    <span style="color: var(--muted); font-size: 13px; margin-left: auto;">Sorted by CCU ↓</span>
+    <span id="liveStatus" style="color: var(--muted); font-size: 13px; margin-left: auto;">Live CCU: connecting…</span>
   </div>
   <div class="grid" id="grid"></div>
 </main>
@@ -309,9 +337,86 @@ const GAMES = [
 ];
 
 const STORAGE_KEY = "ronix_tracker_state_v1";
+const UNI_CACHE_KEY = "ronix_universe_cache_v1";
 let state = loadState();
 let currentFilter = "all";
 let currentSearch = "";
+
+// Convert the initial K-based CCU into raw numbers so the site works before the live fetch lands
+GAMES.forEach(g => {
+  const raw = Math.round((g.n || 0) * 1000);
+  g.n = raw;
+  g.ccu = raw.toLocaleString();
+});
+
+// universeId cache (placeId → universeId) so we don't re-lookup every page load
+let universeCache = {};
+try { universeCache = JSON.parse(localStorage.getItem(UNI_CACHE_KEY) || "{}"); } catch(e) {}
+
+function placeIdFromUrl(url) {
+  const m = (url || "").match(/\/games\/(\d+)/);
+  return m ? m[1] : null;
+}
+
+async function getUniverseId(placeId) {
+  if (!placeId) return null;
+  if (universeCache[placeId]) return universeCache[placeId];
+  try {
+    const r = await fetch(`https://apis.roproxy.com/universes/v1/places/${placeId}/universe`);
+    if (!r.ok) return null;
+    const j = await r.json();
+    if (j && j.universeId) {
+      universeCache[placeId] = j.universeId;
+      localStorage.setItem(UNI_CACHE_KEY, JSON.stringify(universeCache));
+      return j.universeId;
+    }
+  } catch(e) {}
+  return null;
+}
+
+async function fetchLiveCCU() {
+  const statusEl = document.getElementById("liveStatus");
+  if (statusEl) statusEl.textContent = "Live CCU: updating…";
+  try {
+    // Resolve universe IDs (cached after first run)
+    const placeIds = GAMES.map(g => placeIdFromUrl(g.url));
+    const uniIds = await Promise.all(placeIds.map(getUniverseId));
+    const pidToUid = {};
+    placeIds.forEach((pid, i) => { if (pid && uniIds[i]) pidToUid[pid] = uniIds[i]; });
+
+    // Batch games API (max 50 per request)
+    const valid = Object.values(pidToUid).filter((v, i, a) => a.indexOf(v) === i);
+    const playing = {};
+    for (let i = 0; i < valid.length; i += 50) {
+      const chunk = valid.slice(i, i + 50);
+      try {
+        const r = await fetch(`https://games.roproxy.com/v1/games?universeIds=${chunk.join(",")}`);
+        if (!r.ok) continue;
+        const j = await r.json();
+        (j.data || []).forEach(row => { playing[row.id] = row.playing; });
+      } catch(e) {}
+    }
+
+    let updated = 0;
+    GAMES.forEach(g => {
+      const pid = placeIdFromUrl(g.url);
+      const uid = pid && pidToUid[pid];
+      if (uid && typeof playing[uid] === "number") {
+        g.n = playing[uid];
+        g.ccu = playing[uid].toLocaleString();
+        updated++;
+      }
+    });
+
+    if (statusEl) {
+      const t = new Date().toLocaleTimeString();
+      statusEl.textContent = updated > 0 ? `Live CCU · updated ${t} (${updated}/${GAMES.length})` : "Live CCU unavailable — showing cached";
+    }
+    render();
+  } catch(e) {
+    if (statusEl) statusEl.textContent = "Live CCU unavailable — showing cached";
+  }
+}
 
 function loadState() {
   try {
@@ -488,6 +593,8 @@ document.getElementById("resetBtn").addEventListener("click", () => {
 });
 
 render();
+fetchLiveCCU();
+setInterval(fetchLiveCCU, 60000);
 </script>
 </body>
 </html>
