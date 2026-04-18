@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ronix Studios – Script Tracker</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --card: #171a24;
+    --card-hover: #1f2330;
+    --border: #262a37;
+    --text: #e7e9ee;
+    --muted: #8a91a3;
+    --accent: #6ee7b7;
+    --accent-2: #34d399;
+    --danger: #f87171;
+    --warn: #fbbf24;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Helvetica, Arial, sans-serif; }
+  header {
+    padding: 40px 24px 20px;
+    max-width: 1280px;
+    margin: 0 auto;
+  }
+  h1 { margin: 0 0 6px; font-size: 28px; }
+  .subtitle { color: var(--muted); margin: 0 0 20px; font-size: 15px; }
+
+  .progress-wrap {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .progress-text { font-weight: 600; font-size: 14px; min-width: 160px; }
+  .bar {
+    flex: 1;
+    height: 10px;
+    background: #0b0d13;
+    border-radius: 999px;
+    overflow: hidden;
+    min-width: 200px;
+  }
+  .bar > div {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    width: 0%;
+    transition: width .3s ease;
+  }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  button, .btn {
+    background: #22283a;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background .15s ease;
+  }
+  button:hover, .btn:hover { background: #2b3247; }
+  button.danger { background: #3a1e1e; border-color: #5a2a2a; }
+  button.danger:hover { background: #4a2626; }
+
+  main {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 20px 24px 60px;
+  }
+
+  .filter-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: 20px 0 14px;
+    align-items: center;
+  }
+  .filter-row input[type=text] {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    min-width: 240px;
+  }
+  .chip {
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 6px 12px;
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .chip.active { color: var(--accent); border-color: var(--accent); }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 14px;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    position: relative;
+    transition: border-color .2s ease, transform .1s ease;
+  }
+  .card:hover { border-color: #3a4158; }
+  .card.done { border-color: var(--accent-2); background: #122018; }
+  .card .title-row {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .card .title {
+    font-weight: 600;
+    font-size: 15px;
+    line-height: 1.3;
+    word-break: break-word;
+  }
+  .card .ccu {
+    background: #0b0d13;
+    border: 1px solid var(--border);
+    padding: 2px 8px;
+    font-size: 12px;
+    border-radius: 999px;
+    color: var(--warn);
+    white-space: nowrap;
+  }
+  .card .meta { color: var(--muted); font-size: 12px; }
+  .card a.game-link {
+    color: var(--accent);
+    font-size: 13px;
+    text-decoration: none;
+  }
+  .card a.game-link:hover { text-decoration: underline; }
+
+  .proof-area {
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+    padding: 10px;
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+  }
+  .proof-area.has-image { border-style: solid; border-color: var(--accent-2); }
+  .proof-area img {
+    width: 100%;
+    max-height: 180px;
+    object-fit: cover;
+    border-radius: 8px;
+    display: block;
+  }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .row button { flex: 1; }
+  input[type=file] { display: none; }
+
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .status-badge.done { color: var(--accent-2); }
+  .status-badge.pending { color: var(--muted); }
+
+  footer { text-align: center; color: var(--muted); font-size: 12px; padding: 30px; }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    max-width: 800px;
+    width: 100%;
+    max-height: 90vh;
+    overflow: auto;
+  }
+  .modal img { max-width: 100%; border-radius: 8px; }
+  .modal pre { background: #0b0d13; padding: 12px; border-radius: 8px; font-size: 12px; overflow: auto; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Ronix Studios – Script Completion Tracker</h1>
+  <p class="subtitle">Roblox games (10K+ CCU) that don't have a Ronix script yet. Upload a proof image to mark one as finished.</p>
+  <div class="progress-wrap">
+    <div class="progress-text"><span id="doneCount">0</span> / <span id="totalCount">0</span> completed</div>
+    <div class="bar"><div id="progressBar"></div></div>
+    <div class="actions">
+      <button id="exportBtn">Export progress</button>
+      <button id="importBtn">Import progress</button>
+      <input type="file" id="importFile" accept="application/json" />
+      <button id="resetBtn" class="danger">Reset all</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="filter-row">
+    <input type="text" id="search" placeholder="Search games..." />
+    <span class="chip active" data-filter="all">All</span>
+    <span class="chip" data-filter="pending">Pending</span>
+    <span class="chip" data-filter="done">Finished</span>
+    <span style="color: var(--muted); font-size: 13px; margin-left: auto;">Sorted by CCU ↓</span>
+  </div>
+  <div class="grid" id="grid"></div>
+</main>
+
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h3 id="modalTitle" style="margin:0 0 12px;">Proof</h3>
+    <img id="modalImg" src="" alt="" />
+    <p id="modalMeta" style="color: var(--muted); font-size: 13px;"></p>
+    <div class="row" style="margin-top:12px;">
+      <button onclick="closeModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Progress is stored locally in your browser. Export to back up or move to another device.
+</footer>
+
+<script>
+const GAMES = [
+  { title: "Bite By Night", ccu: "108.3K", n: 108.3, url: "https://www.roblox.com/games/116495829188952/Bite-By-Night", note: "Horror survival" },
+  { title: "Dress To Impress", ccu: "87.8K", n: 87.8, url: "https://www.roblox.com/games/15101393044", note: "Fashion contest" },
+  { title: "Sol's RNG", ccu: "67K", n: 67, url: "https://www.roblox.com/games/15532962292", note: "Aura RNG" },
+  { title: "LifeTogether 🏠 RP", ccu: "40.8K", n: 40.8, url: "https://www.roblox.com/games/95398856668514", note: "Roleplay" },
+  { title: "Creatures of Sonaria", ccu: "35.8K", n: 35.8, url: "https://www.roblox.com/games/3475397644", note: "Creature survival" },
+  { title: "Be a Brainrot", ccu: "33.7K", n: 33.7, url: "https://www.roblox.com/games/105626692504093/Be-a-Brainrot", note: "Brainrot transform" },
+  { title: "Driving Empire 🏎️", ccu: "33K", n: 33, url: "https://www.roblox.com/games/2470481070", note: "Car racing" },
+  { title: "+1 Jump Evolve Tower (V3)", ccu: "31.7K", n: 31.7, url: "https://www.roblox.com/games/71706515477118", note: "Evolution tower" },
+  { title: "Dead Rails (Beta)", ccu: "31.3K", n: 31.3, url: "https://www.roblox.com/games/116495829188952", note: "Western train survival" },
+  { title: "bridger: WESTERN", ccu: "30.9K", n: 30.9, url: "https://www.roblox.com/games/99449877692519", note: "Western adventure" },
+  { title: "Escape Obbies For Brainrots!", ccu: "26.4K", n: 26.4, url: "https://www.roblox.com/games/125055254587561", note: "Brainrot obby" },
+  { title: "⚔️ Build to Defend Loot", ccu: "25K", n: 25, url: "https://www.roblox.com/games/96280251181127", note: "Base defense" },
+  { title: "Welcome to Bloxburg 🏡", ccu: "24.6K", n: 24.6, url: "https://www.roblox.com/games/185655149", note: "Life sim / housing" },
+  { title: "King Legacy", ccu: "22K", n: 22, url: "https://www.roblox.com/games/4520749081", note: "Pirate adventure" },
+  { title: "ZOO or OOF 🎯", ccu: "20.2K", n: 20.2, url: "https://www.roblox.com/games/139233844569220", note: "Zoo party game" },
+  { title: "BlockSpin 🔪", ccu: "20K", n: 20, url: "https://www.roblox.com/games/104715542330896", note: "Knife / case unboxing" },
+  { title: "FPS: One Tap", ccu: "18.5K", n: 18.5, url: "https://www.roblox.com/games/90568084448279", note: "Competitive FPS" },
+  { title: "Metro Life 🏡 City RP", ccu: "18.1K", n: 18.1, url: "https://www.roblox.com/games/12985361032", note: "City roleplay" },
+  { title: "Bike Obby For Brainrots!", ccu: "17.9K", n: 17.9, url: "https://www.roblox.com/games/136919941417380", note: "Bike obby" },
+  { title: "Skateboard for Brainrots", ccu: "17.7K", n: 17.7, url: "https://www.roblox.com/games/84259959693333", note: "Skate obby" },
+  { title: "+1 Speed Keyboard Escape: Candy & Chocolate", ccu: "17.6K", n: 17.6, url: "https://www.roblox.com/games/95082159892680", note: "Obby" },
+  { title: "🍰 Bake or Die 💀", ccu: "16.7K", n: 16.7, url: "https://www.roblox.com/games/86479448397834", note: "Baking with a twist" },
+  { title: "Southern Mudding 🚜 OffRoading", ccu: "16.5K", n: 16.5, url: "https://www.roblox.com/games/79480724066456", note: "Off-road driving" },
+  { title: "Pull Lucky Blocks", ccu: "16.2K", n: 16.2, url: "https://www.roblox.com/games/80861715191104", note: "Lucky block puller" },
+  { title: "Attack on Titan Revolution", ccu: "15.5K", n: 15.5, url: "https://www.roblox.com/games/13379208636", note: "AoT combat" },
+  { title: "PLS DONATE 💸", ccu: "15.1K", n: 15.1, url: "https://www.roblox.com/games/8737602449", note: "Donation booth" },
+  { title: "Heroes Battlegrounds", ccu: "15K", n: 15, url: "https://www.roblox.com/games/13076380114", note: "Hero fighting" },
+  { title: "Knife VS Gun DUELS", ccu: "14.3K", n: 14.3, url: "https://www.roblox.com/games/120700541929930", note: "PvP duels" },
+  { title: "+1 Fat To Fit 🍔", ccu: "14.2K", n: 14.2, url: "https://www.roblox.com/games/90158090737937", note: "Obby" },
+  { title: "SHARP 🌸", ccu: "13.9K", n: 13.9, url: "https://www.roblox.com/games/113506071094099", note: "Combat game" },
+  { title: "Oil Empire 🛢️", ccu: "13.3K", n: 13.3, url: "https://www.roblox.com/games/107095834793267", note: "Tycoon" },
+  { title: "Dragon Adventures 🐉", ccu: "13.3K", n: 13.3, url: "https://www.roblox.com/games/3475397644", note: "Dragon raising" },
+  { title: "🛍️ My Avatar!", ccu: "13.1K", n: 13.1, url: "https://www.roblox.com/games/75387700043737", note: "Avatar creator" },
+  { title: "Piggy", ccu: "13.1K", n: 13.1, url: "https://www.roblox.com/games/4623386862", note: "Horror survival" },
+  { title: "I HATE BRAINROT", ccu: "13K", n: 13, url: "https://www.roblox.com/games/119405710070223", note: "Anti-brainrot" },
+  { title: "SNIPER DUELS", ccu: "12.8K", n: 12.8, url: "https://www.roblox.com/games/109397169461300", note: "Sniper PvP" },
+  { title: "+1 Speed Be a Lucky Block!", ccu: "12.5K", n: 12.5, url: "https://www.roblox.com/games/112259901434347", note: "Obby" },
+  { title: "Realistic Street Soccer", ccu: "12.3K", n: 12.3, url: "https://www.roblox.com/discover", note: "Soccer sim" },
+  { title: "Dreamville 🏡 RP (Kids!)", ccu: "12.3K", n: 12.3, url: "https://www.roblox.com/games/74395953411817", note: "Kid-friendly RP" },
+  { title: "Ink Game 💪", ccu: "12.1K", n: 12.1, url: "https://www.roblox.com/games/99567941238278", note: "Squid Game-style" },
+  { title: "🎥 My Movie", ccu: "12.1K", n: 12.1, url: "https://www.roblox.com/games/13600218266", note: "Movie maker" },
+  { title: "Squid Game X 🎭", ccu: "11.9K", n: 11.9, url: "https://www.roblox.com/games/7554888362", note: "Squid Game BR" },
+  { title: "Basketball: Zero (GOAT)", ccu: "11.4K", n: 11.4, url: "https://www.roblox.com/games/130739873848552", note: "Basketball" },
+  { title: "DOORS (April Fools)", ccu: "11.3K", n: 11.3, url: "https://www.roblox.com/games/6516141723", note: "Horror doors" },
+  { title: "Anime Ghosts 🍃", ccu: "11.2K", n: 11.2, url: "https://www.roblox.com/games/101640913672688", note: "Anime RPG" },
+  { title: "Rebirth Champions: Ultimate 🏛️", ccu: "11.1K", n: 11.1, url: "https://www.roblox.com/games/74260430392611", note: "Rebirth sim" },
+  { title: "My Knife Farm (ANIME)", ccu: "11K", n: 11, url: "https://www.roblox.com/games/125003919504672", note: "Anime knife sim" },
+  { title: "Death Ball", ccu: "11K", n: 11, url: "https://www.roblox.com/games/15002061926", note: "Ball sports PvP" },
+  { title: "Clip It 😂🎬👗", ccu: "10.9K", n: 10.9, url: "https://www.roblox.com/games/11765402359", note: "Content creator sim" },
+  { title: "Baddies 💅", ccu: "10.9K", n: 10.9, url: "https://www.roblox.com/games/11158043705", note: "Social hangout" },
+  { title: "Garden Tower Defense 🌻", ccu: "10.6K", n: 10.6, url: "https://www.roblox.com/games/108533757090220", note: "Tower Defense" },
+  { title: "Gacha Online ✨ RP", ccu: "10.6K", n: 10.6, url: "https://www.roblox.com/games/5289509545", note: "Gacha roleplay" },
+  { title: "Outcome Memories v0.2", ccu: "10.4K", n: 10.4, url: "https://www.roblox.com/games/14608970270", note: "Story game" },
+  { title: "Tower of Hell", ccu: "10K", n: 10, url: "https://www.roblox.com/games/1962086868", note: "Classic obby" }
+];
+
+const STORAGE_KEY = "ronix_tracker_state_v1";
+let state = loadState();
+let currentFilter = "all";
+let currentSearch = "";
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return {};
+}
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function slug(title) {
+  return title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+function render() {
+  const grid = document.getElementById("grid");
+  const q = currentSearch.toLowerCase();
+  const sorted = [...GAMES].sort((a, b) => b.n - a.n);
+  const filtered = sorted.filter(g => {
+    const id = slug(g.title);
+    const done = !!(state[id] && state[id].image);
+    if (currentFilter === "done" && !done) return false;
+    if (currentFilter === "pending" && done) return false;
+    if (q && !g.title.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  grid.innerHTML = filtered.map(g => cardHTML(g)).join("");
+  // wire up listeners
+  filtered.forEach(g => {
+    const id = slug(g.title);
+    const fileInput = document.getElementById("file-" + id);
+    fileInput.addEventListener("change", (e) => handleUpload(id, e.target.files[0]));
+    const removeBtn = document.getElementById("remove-" + id);
+    if (removeBtn) removeBtn.addEventListener("click", () => removeProof(id));
+    const viewBtn = document.getElementById("view-" + id);
+    if (viewBtn) viewBtn.addEventListener("click", () => openModal(g, state[id]));
+  });
+
+  // progress
+  const doneCount = GAMES.filter(g => state[slug(g.title)] && state[slug(g.title)].image).length;
+  document.getElementById("doneCount").textContent = doneCount;
+  document.getElementById("totalCount").textContent = GAMES.length;
+  const pct = GAMES.length ? (doneCount / GAMES.length * 100) : 0;
+  document.getElementById("progressBar").style.width = pct + "%";
+}
+
+function cardHTML(g) {
+  const id = slug(g.title);
+  const entry = state[id];
+  const done = !!(entry && entry.image);
+  const imgHTML = done
+    ? `<img src="${entry.image}" alt="proof" />
+       <div class="row">
+         <button id="view-${id}">View proof</button>
+         <button id="remove-${id}" class="danger">Remove</button>
+       </div>`
+    : `<label for="file-${id}" class="btn" style="text-align:center;">Upload proof image to finish</label>`;
+  return `
+    <div class="card ${done ? 'done' : ''}">
+      <div class="title-row">
+        <div class="title">${escapeHTML(g.title)}</div>
+        <div class="ccu">${g.ccu}</div>
+      </div>
+      <div class="meta">${escapeHTML(g.note)}</div>
+      <a class="game-link" href="${g.url}" target="_blank" rel="noopener">Open on Roblox →</a>
+      <div class="proof-area ${done ? 'has-image' : ''}">
+        <div class="status-badge ${done ? 'done' : 'pending'}">
+          ${done ? '✓ Finished' : '○ Pending'}
+          ${done && entry.date ? `<span style="color: var(--muted); font-weight: 400; margin-left: 6px;">${new Date(entry.date).toLocaleDateString()}</span>` : ''}
+        </div>
+        ${imgHTML}
+        <input type="file" id="file-${id}" accept="image/*" />
+      </div>
+    </div>
+  `;
+}
+
+function escapeHTML(s) {
+  return (s + "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function handleUpload(id, file) {
+  if (!file) return;
+  if (!file.type.startsWith("image/")) {
+    alert("Please upload an image file.");
+    return;
+  }
+  if (file.size > 4 * 1024 * 1024) {
+    alert("Image is too large (>4MB). Please upload a smaller image.");
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    state[id] = {
+      image: e.target.result,
+      date: new Date().toISOString(),
+      filename: file.name
+    };
+    saveState();
+    render();
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeProof(id) {
+  if (!confirm("Remove proof for this game?")) return;
+  delete state[id];
+  saveState();
+  render();
+}
+
+function openModal(g, entry) {
+  document.getElementById("modalTitle").textContent = g.title;
+  document.getElementById("modalImg").src = entry.image;
+  document.getElementById("modalMeta").textContent =
+    `Finished ${new Date(entry.date).toLocaleString()} · ${entry.filename || ''}`;
+  document.getElementById("modal").classList.add("open");
+}
+function closeModal() {
+  document.getElementById("modal").classList.remove("open");
+}
+document.getElementById("modal").addEventListener("click", (e) => {
+  if (e.target.id === "modal") closeModal();
+});
+
+// Filters
+document.querySelectorAll(".chip").forEach(c => {
+  c.addEventListener("click", () => {
+    document.querySelectorAll(".chip").forEach(x => x.classList.remove("active"));
+    c.classList.add("active");
+    currentFilter = c.dataset.filter;
+    render();
+  });
+});
+document.getElementById("search").addEventListener("input", (e) => {
+  currentSearch = e.target.value;
+  render();
+});
+
+// Export / import / reset
+document.getElementById("exportBtn").addEventListener("click", () => {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "ronix-tracker-progress.json";
+  a.click();
+});
+document.getElementById("importBtn").addEventListener("click", () => {
+  document.getElementById("importFile").click();
+});
+document.getElementById("importFile").addEventListener("change", (e) => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const parsed = JSON.parse(ev.target.result);
+      state = parsed;
+      saveState();
+      render();
+    } catch (err) {
+      alert("Invalid file.");
+    }
+  };
+  reader.readAsText(f);
+});
+document.getElementById("resetBtn").addEventListener("click", () => {
+  if (!confirm("Reset all progress? This cannot be undone.")) return;
+  state = {};
+  saveState();
+  render();
+});
+
+render();
+</script>
+</body>
+</html>
