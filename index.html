@@ -4,10 +4,14 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Ronix Studios – Script Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #0f1117;
-    --card: #171a24;
+    --card: #171a24cc;
+    --card-solid: #171a24;
     --card-hover: #1f2330;
     --border: #262a37;
     --text: #e7e9ee;
@@ -18,13 +22,25 @@
     --warn: #fbbf24;
   }
   * { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Helvetica, Arial, sans-serif; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+  h1, h2, h3, .display { font-family: "Anton", "Bebas Neue", "Inter", sans-serif; letter-spacing: 0.02em; text-transform: uppercase; font-weight: 400; }
+
+  /* Background video + overlay */
+  #bgVideo {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    object-fit: cover; z-index: -2; pointer-events: none;
+  }
+  #bgOverlay {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(15, 17, 23, 0.78); z-index: -1; pointer-events: none;
+  }
+
   header {
     padding: 40px 24px 20px;
     max-width: 1280px;
     margin: 0 auto;
   }
-  h1 { margin: 0 0 6px; font-size: 28px; }
+  h1 { margin: 0 0 6px; font-size: 46px; letter-spacing: 0.03em; }
   .subtitle { color: var(--muted); margin: 0 0 20px; font-size: 15px; }
 
   .progress-wrap {
@@ -36,6 +52,7 @@
     align-items: center;
     gap: 16px;
     flex-wrap: wrap;
+    backdrop-filter: blur(6px);
   }
   .progress-text { font-weight: 600; font-size: 14px; min-width: 160px; }
   .bar {
@@ -62,6 +79,7 @@
     font-size: 13px;
     cursor: pointer;
     transition: background .15s ease;
+    font-family: inherit;
   }
   button:hover, .btn:hover { background: #2b3247; }
   button.danger { background: #3a1e1e; border-color: #5a2a2a; }
@@ -88,6 +106,7 @@
     border-radius: 8px;
     font-size: 14px;
     min-width: 240px;
+    backdrop-filter: blur(6px);
   }
   .chip {
     background: var(--card);
@@ -97,6 +116,7 @@
     cursor: pointer;
     font-size: 13px;
     color: var(--muted);
+    backdrop-filter: blur(6px);
   }
   .chip.active { color: var(--accent); border-color: var(--accent); }
 
@@ -109,37 +129,98 @@
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: 14px;
-    padding: 16px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+    transition: border-color .2s ease, transform .1s ease;
+    backdrop-filter: blur(8px);
+  }
+  .card:hover { border-color: #3a4158; }
+  .card.done { border-color: var(--accent-2); }
+
+  .cover-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: #0b0d13;
+    overflow: hidden;
+  }
+  .cover-wrap img.cover {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: filter .2s ease, transform .3s ease;
+  }
+  .card.done .cover-wrap img.cover {
+    filter: grayscale(0.35) brightness(0.6);
+  }
+  .cover-wrap .cover-placeholder {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--muted); font-size: 12px;
+    background: linear-gradient(135deg, #171a24, #0b0d13);
+  }
+  .finished-overlay {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none;
+  }
+  .finished-badge {
+    font-family: "Anton", "Bebas Neue", sans-serif;
+    font-size: 38px;
+    letter-spacing: 0.08em;
+    color: #fff;
+    background: rgba(52, 211, 153, 0.9);
+    padding: 6px 18px;
+    border-radius: 4px;
+    transform: rotate(-8deg);
+    border: 2px solid #fff;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+    text-transform: uppercase;
+  }
+  .cover-ccu {
+    position: absolute;
+    top: 8px; right: 8px;
+    background: rgba(0,0,0,0.7);
+    color: var(--warn);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 999px;
+    white-space: nowrap;
+    backdrop-filter: blur(4px);
+  }
+
+  .card-body {
+    padding: 14px 16px 16px;
     display: flex;
     flex-direction: column;
     gap: 10px;
-    position: relative;
-    transition: border-color .2s ease, transform .1s ease;
-  }
-  .card:hover { border-color: #3a4158; }
-  .card.done { border-color: var(--accent-2); background: #122018; }
-  .card .title-row {
-    display: flex;
-    align-items: start;
-    justify-content: space-between;
-    gap: 8px;
   }
   .card .title {
-    font-weight: 600;
-    font-size: 15px;
-    line-height: 1.3;
+    font-family: "Anton", "Bebas Neue", "Inter", sans-serif;
+    font-weight: 400;
+    font-size: 22px;
+    line-height: 1.1;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
     word-break: break-word;
   }
-  .card .ccu {
-    background: #0b0d13;
-    border: 1px solid var(--border);
+  .card .meta { color: var(--muted); font-size: 12px; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+  .genre-badge {
+    display: inline-block;
+    font-size: 10px;
     padding: 2px 8px;
-    font-size: 12px;
+    background: rgba(110, 231, 183, 0.15);
+    color: var(--accent);
+    border: 1px solid rgba(110, 231, 183, 0.35);
     border-radius: 999px;
-    color: var(--warn);
-    white-space: nowrap;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
   }
-  .card .meta { color: var(--muted); font-size: 12px; }
   .card a.game-link {
     color: var(--accent);
     font-size: 13px;
@@ -156,12 +237,11 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
-    align-items: stretch;
   }
   .proof-area.has-image { border-style: solid; border-color: var(--accent-2); }
-  .proof-area img {
+  .proof-area img.proof-img {
     width: 100%;
-    max-height: 180px;
+    max-height: 160px;
     object-fit: cover;
     border-radius: 8px;
     display: block;
@@ -180,21 +260,54 @@
   .status-badge.done { color: var(--accent-2); }
   .status-badge.pending { color: var(--muted); }
 
+  /* Volume control (bottom right) */
+  .music-control {
+    position: fixed;
+    bottom: 16px; right: 16px;
+    z-index: 9999;
+    background: rgba(23, 26, 36, 0.9);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 14px rgba(0,0,0,.35);
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .music-control .note { font-size: 16px; line-height: 1; }
+  .music-control input[type=range] {
+    width: 110px;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+  .music-control .vol-label {
+    color: var(--muted);
+    font-weight: 500;
+    font-size: 11px;
+    min-width: 28px;
+    text-align: right;
+  }
+
   footer { text-align: center; color: var(--muted); font-size: 12px; padding: 30px; }
 
   /* Modal */
   .modal-overlay {
     position: fixed; inset: 0;
-    background: rgba(0,0,0,0.7);
+    background: rgba(0,0,0,0.75);
     display: none;
     align-items: center;
     justify-content: center;
     z-index: 50;
     padding: 20px;
+    backdrop-filter: blur(4px);
   }
   .modal-overlay.open { display: flex; }
   .modal {
-    background: var(--card);
+    background: var(--card-solid);
     border: 1px solid var(--border);
     border-radius: 12px;
     padding: 20px;
@@ -209,31 +322,82 @@
 </head>
 <body>
 
+<video id="bgVideo" autoplay muted loop playsinline preload="auto" crossorigin="anonymous">
+  <source src="bgvideo.mp4" type="video/mp4">
+  <source src="%20bgvideo.mp4" type="video/mp4">
+  <source src="%20%20bgvideo.mp4" type="video/mp4">
+  <source src="%20%20%20bgvideo.mp4" type="video/mp4">
+</video>
+<div id="bgOverlay"></div>
+
+<script>
+// Auto-detect which bgvideo filename actually exists in the repo (spaces prefix issue).
+(function(){
+  var candidates = ['bgvideo.mp4','%20bgvideo.mp4','%20%20bgvideo.mp4','%20%20%20bgvideo.mp4'];
+  var v = document.getElementById('bgVideo');
+  if (!v) return;
+  async function findIt(){
+    for (var i=0; i<candidates.length; i++) {
+      try {
+        var r = await fetch(candidates[i], { method: 'HEAD' });
+        if (r.ok) {
+          v.innerHTML = '<source src="'+candidates[i]+'" type="video/mp4">';
+          v.load();
+          v.play().catch(function(){});
+          return;
+        }
+      } catch(e){}
+    }
+  }
+  findIt();
+})();
+</script>
+
 <audio id="bgMusic" src="%20%20bgmusic.mp3" loop preload="auto" autoplay></audio>
-<button id="musicToggle" type="button" aria-label="Toggle background music"
-  style="position:fixed;bottom:16px;right:16px;z-index:9999;background:#171a24;color:#e7e9ee;border:1px solid #262a37;border-radius:999px;padding:10px 14px;font:600 13px -apple-system,BlinkMacSystemFont,Segoe UI,Inter,Helvetica,Arial,sans-serif;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.35)">
-  &#9834; Music: On
-</button>
+
+<div class="music-control" id="musicControl">
+  <span class="note">&#9834;</span>
+  <input type="range" id="volumeSlider" min="0" max="100" value="35" aria-label="Music volume" />
+  <span class="vol-label" id="volLabel">35%</span>
+</div>
+
 <script>
 (function(){
   var a = document.getElementById('bgMusic');
-  var btn = document.getElementById('musicToggle');
-  a.volume = 0.35;
-  function label(){ btn.innerHTML = (a.paused ? '&#9834; Music: Off' : '&#9834; Music: On'); }
+  var slider = document.getElementById('volumeSlider');
+  var label = document.getElementById('volLabel');
+
+  // Restore saved volume
+  var saved = parseFloat(localStorage.getItem('ronix_volume'));
+  if (!isNaN(saved) && saved >= 0 && saved <= 1) {
+    slider.value = Math.round(saved * 100);
+  }
+  a.volume = slider.value / 100;
+  label.textContent = slider.value + '%';
+
   function tryPlay(){ var p = a.play(); if (p && p.catch) p.catch(function(){}); }
   tryPlay();
+
   // Autoplay fallback: start on first user interaction
-  function kick(){ tryPlay(); label(); document.removeEventListener('click', kick, true); document.removeEventListener('keydown', kick, true); }
+  function kick(){ tryPlay(); document.removeEventListener('click', kick, true); document.removeEventListener('keydown', kick, true); }
   document.addEventListener('click', kick, true);
   document.addEventListener('keydown', kick, true);
-  btn.addEventListener('click', function(e){
-    e.stopPropagation();
-    if (a.paused) tryPlay(); else a.pause();
-    setTimeout(label, 50);
+
+  slider.addEventListener('input', function(){
+    var v = slider.value / 100;
+    a.volume = v;
+    label.textContent = slider.value + '%';
+    localStorage.setItem('ronix_volume', v);
+    if (a.paused && v > 0) tryPlay();
   });
-  a.addEventListener('play', label);
-  a.addEventListener('pause', label);
-  label();
+
+  // Video autoplay fallback too
+  var v = document.getElementById('bgVideo');
+  if (v) {
+    function kickV(){ v.play().catch(function(){}); document.removeEventListener('click', kickV, true); }
+    document.addEventListener('click', kickV, true);
+    v.play().catch(function(){});
+  }
 })();
 </script>
 
@@ -280,7 +444,6 @@
 
 <script>
 const GAMES = [
-  { title: "Bite By Night", ccu: "108.3K", n: 108.3, url: "https://www.roblox.com/games/116495829188952/Bite-By-Night", note: "Horror survival" },
   { title: "Dress To Impress", ccu: "87.8K", n: 87.8, url: "https://www.roblox.com/games/15101393044", note: "Fashion contest" },
   { title: "Sol's RNG", ccu: "67K", n: 67, url: "https://www.roblox.com/games/15532962292", note: "Aura RNG" },
   { title: "LifeTogether 🏠 RP", ccu: "40.8K", n: 40.8, url: "https://www.roblox.com/games/95398856668514", note: "Roleplay" },
@@ -288,7 +451,7 @@ const GAMES = [
   { title: "Be a Brainrot", ccu: "33.7K", n: 33.7, url: "https://www.roblox.com/games/105626692504093/Be-a-Brainrot", note: "Brainrot transform" },
   { title: "Driving Empire 🏎️", ccu: "33K", n: 33, url: "https://www.roblox.com/games/2470481070", note: "Car racing" },
   { title: "+1 Jump Evolve Tower (V3)", ccu: "31.7K", n: 31.7, url: "https://www.roblox.com/games/71706515477118", note: "Evolution tower" },
-  { title: "Dead Rails (Beta)", ccu: "31.3K", n: 31.3, url: "https://www.roblox.com/games/116495829188952", note: "Western train survival" },
+  { title: "Dead Rails (Beta)", ccu: "31.3K", n: 31.3, url: "https://www.roblox.com/games/90394973550925", note: "Western train survival" },
   { title: "bridger: WESTERN", ccu: "30.9K", n: 30.9, url: "https://www.roblox.com/games/99449877692519", note: "Western adventure" },
   { title: "Escape Obbies For Brainrots!", ccu: "26.4K", n: 26.4, url: "https://www.roblox.com/games/125055254587561", note: "Brainrot obby" },
   { title: "⚔️ Build to Defend Loot", ccu: "25K", n: 25, url: "https://www.roblox.com/games/96280251181127", note: "Base defense" },
@@ -311,7 +474,7 @@ const GAMES = [
   { title: "+1 Fat To Fit 🍔", ccu: "14.2K", n: 14.2, url: "https://www.roblox.com/games/90158090737937", note: "Obby" },
   { title: "SHARP 🌸", ccu: "13.9K", n: 13.9, url: "https://www.roblox.com/games/113506071094099", note: "Combat game" },
   { title: "Oil Empire 🛢️", ccu: "13.3K", n: 13.3, url: "https://www.roblox.com/games/107095834793267", note: "Tycoon" },
-  { title: "Dragon Adventures 🐉", ccu: "13.3K", n: 13.3, url: "https://www.roblox.com/games/3475397644", note: "Dragon raising" },
+  { title: "Dragon Adventures 🐉", ccu: "13.3K", n: 13.3, url: "https://www.roblox.com/games/3956818381", note: "Dragon raising" },
   { title: "🛍️ My Avatar!", ccu: "13.1K", n: 13.1, url: "https://www.roblox.com/games/75387700043737", note: "Avatar creator" },
   { title: "Piggy", ccu: "13.1K", n: 13.1, url: "https://www.roblox.com/games/4623386862", note: "Horror survival" },
   { title: "I HATE BRAINROT", ccu: "13K", n: 13, url: "https://www.roblox.com/games/119405710070223", note: "Anti-brainrot" },
@@ -338,20 +501,23 @@ const GAMES = [
 
 const STORAGE_KEY = "ronix_tracker_state_v1";
 const UNI_CACHE_KEY = "ronix_universe_cache_v1";
+const THUMB_CACHE_KEY = "ronix_thumb_cache_v1";
 let state = loadState();
 let currentFilter = "all";
 let currentSearch = "";
 
-// Convert the initial K-based CCU into raw numbers so the site works before the live fetch lands
+// Convert initial K-based CCU into raw numbers so site works before the live fetch lands
 GAMES.forEach(g => {
   const raw = Math.round((g.n || 0) * 1000);
   g.n = raw;
   g.ccu = raw.toLocaleString();
 });
 
-// universeId cache (placeId → universeId) so we don't re-lookup every page load
+// Caches
 let universeCache = {};
 try { universeCache = JSON.parse(localStorage.getItem(UNI_CACHE_KEY) || "{}"); } catch(e) {}
+let thumbCache = {};
+try { thumbCache = JSON.parse(localStorage.getItem(THUMB_CACHE_KEY) || "{}"); } catch(e) {}
 
 function placeIdFromUrl(url) {
   const m = (url || "").match(/\/games\/(\d+)/);
@@ -374,37 +540,82 @@ async function getUniverseId(placeId) {
   return null;
 }
 
+async function fetchThumbnails(uniIds) {
+  const missing = uniIds.filter(id => id && !thumbCache[id]);
+  if (!missing.length) return;
+  for (let i = 0; i < missing.length; i += 50) {
+    const chunk = missing.slice(i, i + 50);
+    try {
+      const r = await fetch(`https://thumbnails.roproxy.com/v1/games/multiget/thumbnails?universeIds=${chunk.join(",")}&countPerUniverse=1&defaults=true&size=768x432&format=Png&isCircular=false`);
+      if (!r.ok) continue;
+      const j = await r.json();
+      (j.data || []).forEach(row => {
+        const img = row.thumbnails && row.thumbnails[0];
+        if (img && img.imageUrl) thumbCache[row.universeId] = img.imageUrl;
+      });
+    } catch(e) {}
+  }
+  try { localStorage.setItem(THUMB_CACHE_KEY, JSON.stringify(thumbCache)); } catch(e) {}
+}
+
 async function fetchLiveCCU() {
   const statusEl = document.getElementById("liveStatus");
   if (statusEl) statusEl.textContent = "Live CCU: updating…";
   try {
-    // Resolve universe IDs (cached after first run)
     const placeIds = GAMES.map(g => placeIdFromUrl(g.url));
     const uniIds = await Promise.all(placeIds.map(getUniverseId));
     const pidToUid = {};
     placeIds.forEach((pid, i) => { if (pid && uniIds[i]) pidToUid[pid] = uniIds[i]; });
 
-    // Batch games API (max 50 per request)
-    const valid = Object.values(pidToUid).filter((v, i, a) => a.indexOf(v) === i);
+    // store universeId on each game — if a universeId shows up for multiple games,
+    // keep only the first so we don't render identical covers on different cards.
+    const seenUids = new Set();
+    GAMES.forEach(g => {
+      const pid = placeIdFromUrl(g.url);
+      const uid = pid && pidToUid[pid];
+      if (uid && !seenUids.has(uid)) {
+        g.universeId = uid;
+        seenUids.add(uid);
+        g.duplicate = false;
+      } else if (uid) {
+        g.universeId = null;
+        g.duplicate = true;
+      } else {
+        g.universeId = null;
+        g.duplicate = false;
+      }
+    });
+
+    // Fetch thumbnails for new universes
+    await fetchThumbnails(Array.from(seenUids));
+
+    // Batch game lookups (CCU + genre) — max 50 per request
+    const valid = Array.from(seenUids);
     const playing = {};
+    const genres = {};
     for (let i = 0; i < valid.length; i += 50) {
       const chunk = valid.slice(i, i + 50);
       try {
         const r = await fetch(`https://games.roproxy.com/v1/games?universeIds=${chunk.join(",")}`);
         if (!r.ok) continue;
         const j = await r.json();
-        (j.data || []).forEach(row => { playing[row.id] = row.playing; });
+        (j.data || []).forEach(row => {
+          playing[row.id] = row.playing;
+          if (row.genre) genres[row.id] = row.genre;
+        });
       } catch(e) {}
     }
 
     let updated = 0;
     GAMES.forEach(g => {
-      const pid = placeIdFromUrl(g.url);
-      const uid = pid && pidToUid[pid];
+      const uid = g.universeId;
       if (uid && typeof playing[uid] === "number") {
         g.n = playing[uid];
         g.ccu = playing[uid].toLocaleString();
         updated++;
+      }
+      if (uid && genres[uid]) {
+        g.genre = genres[uid];
       }
     });
 
@@ -446,18 +657,17 @@ function render() {
     return true;
   });
   grid.innerHTML = filtered.map(g => cardHTML(g)).join("");
-  // wire up listeners
+
   filtered.forEach(g => {
     const id = slug(g.title);
     const fileInput = document.getElementById("file-" + id);
-    fileInput.addEventListener("change", (e) => handleUpload(id, e.target.files[0]));
+    if (fileInput) fileInput.addEventListener("change", (e) => handleUpload(id, e.target.files[0]));
     const removeBtn = document.getElementById("remove-" + id);
     if (removeBtn) removeBtn.addEventListener("click", () => removeProof(id));
     const viewBtn = document.getElementById("view-" + id);
     if (viewBtn) viewBtn.addEventListener("click", () => openModal(g, state[id]));
   });
 
-  // progress
   const doneCount = GAMES.filter(g => state[slug(g.title)] && state[slug(g.title)].image).length;
   document.getElementById("doneCount").textContent = doneCount;
   document.getElementById("totalCount").textContent = GAMES.length;
@@ -469,28 +679,45 @@ function cardHTML(g) {
   const id = slug(g.title);
   const entry = state[id];
   const done = !!(entry && entry.image);
-  const imgHTML = done
-    ? `<img src="${entry.image}" alt="proof" />
+  const thumb = g.universeId && thumbCache[g.universeId];
+  const coverInner = thumb
+    ? `<img class="cover" src="${thumb}" alt="${escapeHTML(g.title)} cover" loading="lazy" />`
+    : g.duplicate
+      ? `<div class="cover-placeholder">No unique cover</div>`
+      : `<div class="cover-placeholder">Loading cover…</div>`;
+  const finishedOverlay = done
+    ? `<div class="finished-overlay"><div class="finished-badge">Finished</div></div>`
+    : '';
+  const proofInner = done
+    ? `<img class="proof-img" src="${entry.image}" alt="proof" />
        <div class="row">
          <button id="view-${id}">View proof</button>
          <button id="remove-${id}" class="danger">Remove</button>
        </div>`
     : `<label for="file-${id}" class="btn" style="text-align:center;">Upload proof image to finish</label>`;
+
   return `
     <div class="card ${done ? 'done' : ''}">
-      <div class="title-row">
-        <div class="title">${escapeHTML(g.title)}</div>
-        <div class="ccu">${g.ccu}</div>
+      <div class="cover-wrap">
+        ${coverInner}
+        ${finishedOverlay}
+        <div class="cover-ccu">${g.ccu}</div>
       </div>
-      <div class="meta">${escapeHTML(g.note)}</div>
-      <a class="game-link" href="${g.url}" target="_blank" rel="noopener">Open on Roblox →</a>
-      <div class="proof-area ${done ? 'has-image' : ''}">
-        <div class="status-badge ${done ? 'done' : 'pending'}">
-          ${done ? '✓ Finished' : '○ Pending'}
-          ${done && entry.date ? `<span style="color: var(--muted); font-weight: 400; margin-left: 6px;">${new Date(entry.date).toLocaleDateString()}</span>` : ''}
+      <div class="card-body">
+        <div class="title">${escapeHTML(g.title)}</div>
+        <div class="meta">
+          ${g.genre ? `<span class="genre-badge">${escapeHTML(g.genre)}</span>` : ''}
+          <span>${escapeHTML(g.note)}</span>
         </div>
-        ${imgHTML}
-        <input type="file" id="file-${id}" accept="image/*" />
+        <a class="game-link" href="${g.url}" target="_blank" rel="noopener">Open on Roblox →</a>
+        <div class="proof-area ${done ? 'has-image' : ''}">
+          <div class="status-badge ${done ? 'done' : 'pending'}">
+            ${done ? '✓ Finished' : '○ Pending'}
+            ${done && entry.date ? `<span style="color: var(--muted); font-weight: 400; margin-left: 6px;">${new Date(entry.date).toLocaleDateString()}</span>` : ''}
+          </div>
+          ${proofInner}
+          <input type="file" id="file-${id}" accept="image/*" />
+        </div>
       </div>
     </div>
   `;
