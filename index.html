@@ -539,7 +539,7 @@ async function fetchLiveCCU() {
     const pidToUid = {};
     placeIds.forEach((pid, i) => { if (pid && uniIds[i]) pidToUid[pid] = uniIds[i]; });
 
-    // store universeId on each game — if a universeId shows up for multiple games,
+    // store universeId on each game; if a universeId shows up for multiple games,
     // keep only the first so we don't render identical covers on different cards.
     const seenUids = new Set();
     GAMES.forEach(g => {
@@ -561,7 +561,7 @@ async function fetchLiveCCU() {
     // Fetch thumbnails for new universes
     await fetchThumbnails(Array.from(seenUids));
 
-    // Batch game lookups (CCU + genre) — max 50 per request
+    // Batch game lookups (CCU + genre), max 50 per request
     const valid = Array.from(seenUids);
     const playing = {};
     const genres = {};
@@ -593,11 +593,11 @@ async function fetchLiveCCU() {
 
     if (statusEl) {
       const t = new Date().toLocaleTimeString();
-      statusEl.textContent = updated > 0 ? `Live CCU · updated ${t} (${updated}/${GAMES.length})` : "Live CCU unavailable — showing cached";
+      statusEl.textContent = updated > 0 ? `Live CCU · updated ${t} (${updated}/${GAMES.length})` : "Live CCU unavailable, showing cached counts";
     }
     render();
   } catch(e) {
-    if (statusEl) statusEl.textContent = "Live CCU unavailable — showing cached";
+    if (statusEl) statusEl.textContent = "Live CCU unavailable, showing cached counts";
   }
 }
 
