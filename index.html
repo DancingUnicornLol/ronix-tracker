@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Ronix Studios – Script Tracker</title>
+<title>Ronix Studios | Script Tracker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -322,38 +322,10 @@
 </head>
 <body>
 
-<video id="bgVideo" autoplay muted loop playsinline preload="auto" crossorigin="anonymous">
-  <source src="bgvideo.mp4" type="video/mp4">
-  <source src="%20bgvideo.mp4" type="video/mp4">
-  <source src="%20%20bgvideo.mp4" type="video/mp4">
-  <source src="%20%20%20bgvideo.mp4" type="video/mp4">
-</video>
+<video id="bgVideo" src="bgvideo.mp4" autoplay muted loop playsinline preload="auto"></video>
 <div id="bgOverlay"></div>
 
-<script>
-// Auto-detect which bgvideo filename actually exists in the repo (spaces prefix issue).
-(function(){
-  var candidates = ['bgvideo.mp4','%20bgvideo.mp4','%20%20bgvideo.mp4','%20%20%20bgvideo.mp4'];
-  var v = document.getElementById('bgVideo');
-  if (!v) return;
-  async function findIt(){
-    for (var i=0; i<candidates.length; i++) {
-      try {
-        var r = await fetch(candidates[i], { method: 'HEAD' });
-        if (r.ok) {
-          v.innerHTML = '<source src="'+candidates[i]+'" type="video/mp4">';
-          v.load();
-          v.play().catch(function(){});
-          return;
-        }
-      } catch(e){}
-    }
-  }
-  findIt();
-})();
-</script>
-
-<audio id="bgMusic" src="%20%20bgmusic.mp3" loop preload="auto" autoplay></audio>
+<audio id="bgMusic" src="bgmusic.mp3" loop preload="auto" autoplay></audio>
 
 <div class="music-control" id="musicControl">
   <span class="note">&#9834;</span>
@@ -402,7 +374,7 @@
 </script>
 
 <header>
-  <h1>Ronix Studios – Script Completion Tracker</h1>
+  <h1>Ronix Studios: Script Completion Tracker</h1>
   <p class="subtitle">Roblox games (10K+ CCU) that don't have a Ronix script yet. Upload a proof image to mark one as finished.</p>
   <div class="progress-wrap">
     <div class="progress-text"><span id="doneCount">0</span> / <span id="totalCount">0</span> completed</div>
